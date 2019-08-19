@@ -1,0 +1,22 @@
+
+resource "aws_instance" "nfs-server" {
+  ami                    = "${data.aws_ami.nfs-ami.id}"
+  instance_type          = "t2.small"
+  iam_instance_profile   = "${aws_iam_instance_profile.nfs-profile.id}"
+  key_name               = "${aws_key_pair.mykeypair.key_name}"
+  subnet_id              = "${element(module.vpc.public_subnets, 0)}"
+  vpc_security_group_ids = ["${aws_security_group.internal_ssh.id}", "${aws_security_group.nfs.id}"]
+}
+
+resource "null_resource" "nfs-server-bootstrap" {
+  triggers = {
+    nfs_server_id = "${aws_instance.nfs-server.id}"
+  }
+
+  provisioner "local-exec" {
+    command = <<EOF
+       aws ec2 wait instance-status-ok --instance-ids ${aws_instance.nfs-server.id} && \
+       ansible-playbook -i ${aws_instance.nfs-server.public_ip} --private-key ${var.private_key} ../ansible/nfs.yml
+  EOF
+  }
+}

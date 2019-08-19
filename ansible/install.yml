@@ -1,0 +1,29 @@
+---
+- hosts: all
+  become: true
+  remote_user: ubuntu
+  vars_files:
+    - vars/main.yml
+  tasks:
+
+    - name: update
+      apt: name="*" state=latest update_cache=yes
+    - name: Install aptitude using apt
+      apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+    - name: install mdadm
+      apt: name="{{item}}" state=present update_cache=yes
+      loop: [ 'mdadm', 'nfs-common', 'nfs-kernel-server' ]
+
+    # - name: Create a RAID device
+    #   shell: mdadm --create --verbose "{{ raid_dev }}" --level="{{ raid_level }}" --name="{{ raid_name }}" --raid-devices={{ raid_devices | length }} {{ raid_devices | join(' ') }}
+    # - name: print details
+    #   shell: mdadm --detail "{{raid_dev}}"
+    # - name: Ensure RAID array is reassembled automatically on boot.
+    #   shell: mdadm --detail --scan | tee -a /etc/mdadm.conf
+    # - name: update
+    #   shell: update-initramfs -u
+    #
+    # - name: filesystem
+    #   filesystem: fstype="{{filesystem}}" dev=/dev/md0 force=no
+    # - name: arrays | Mounting Array(s)
+    #   mount: path=/gitlab-data src=/dev/md0 fstype=ext4 state=mounted
